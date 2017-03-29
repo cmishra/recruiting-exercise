@@ -1,0 +1,21 @@
+code:
+  flow:
+    common:
+      version: latest
+      generators:
+        anorm_2_x_parsers: api/app/generated
+        play_2_x_routes: api/conf/common.routes
+        play_2_4_client: api/app/generated
+    currency:
+      version: latest
+      generators:
+        anorm_2_x_parsers: api/app/generated
+        play_2_x_routes: api/conf/currency.routes
+        play_2_4_client: api/app/generated
+    fixer:
+      version: latest
+      generators:
+        play_2_4_client: api/app/generated
+        play_2_4_client: api/app/generated
+        play_2_4_mock_client: api/app/generated
+        
