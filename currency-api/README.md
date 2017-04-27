@@ -22,9 +22,9 @@ minimum:
 
   - A user should be able to:
 
-        curl localhost:9000/rates?base=USD&target=CAN
+        curl localhost:9000/rates?base=USD&target=CAD
 
-    return a list of the latest current rate from USD to CAN
+    return a list of the latest current rate from USD to CAD
 
   - A user should be able to provide a timestamp which would
     return the currency rate at that moment in time.
