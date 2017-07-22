@@ -6,35 +6,35 @@ import (
 )
 
 
-type CurrencyData struct {
+type CurrencyServer struct {
 	Rates map[string]float64
 	LastUpdate time.Time
-	Source Provider 
+	Source currencybackend.Provider 
 	CurrencyList []string
 }
 
 
-func NewCurrencyData() CurrencyData {
-	ret := CurrencyData{}
-	ret.Provider = currencybackend.FixerData{}
+func NewCurrencyServer() CurrencyServer {
+	ret := CurrencyServer{}
+	ret.Source = &currencybackend.Fixer{}
+	ret.Update()
 	return ret
 }
 
 
-func (f *CurrencyData) CurrencySupported(currency string) bool {
-	_, ok := self.Rates[currency]
+func (f *CurrencyServer) CurrencySupported(currency string) bool {
+	_, ok := f.Rates[currency]
 	return ok
 }
 
 
-func (f *CurrencyData) GetRate(base string, targets []string) (string) {
-	ratio := self.Rates[target]/self.Rates[base]
-	moneyFormatting := fmt.Sprintf("%.2f", ratio)
-	return moneyFormatting
+func (f *CurrencyServer) GetRate(base string, target string) (float64) {
+	ratio := f.Rates[target]/f.Rates[base]
+	return ratio
 }
 
-func (f *CurrencyData) Update() {
-	rates, curtime := self.Provider.PullUpdate()
+func (f *CurrencyServer) Update() {
+	rates, curtime := f.Source.PullUpdate()
 	f.Rates = rates
 	f.LastUpdate = curtime
 	
@@ -42,7 +42,7 @@ func (f *CurrencyData) Update() {
 	for k, _ := range rates {
 		currencyList = append(currencyList, k)
 	}
-	self.CurrencyList = currencyList
+	f.CurrencyList = currencyList
 }
 
 
