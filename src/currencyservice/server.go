@@ -125,7 +125,7 @@ func (server *CurrencyServer) RequestHandler(w http.ResponseWriter, r *http.Requ
 		return
 	} else if requestTime.After(time.Now()) {
 		errorMsg := fmt.Sprintf(TimestampFutureMsg, requestTime.Format(TimestampFormat))
-		log.Println(TimestampFutureMsg, requestTime.Format(TimestampFormat))
+		log.Printf(TimestampFutureMsg, requestTime.Format(TimestampFormat))
 		ErrorResponseJSON(w, errorMsg, InvalidRequestErrorCode)
 		return
 	}
