@@ -8,9 +8,9 @@ import (
 
 type CurrencyServer struct {
 	Rates map[string]float64
-	LastUpdate time.Time
+	CurrencyUpdateTime time.Time
 	Source currencybackend.Provider 
-	CurrencyList []string
+	CurrencyList Set
 }
 
 
@@ -28,21 +28,32 @@ func (f *CurrencyServer) CurrencySupported(currency string) bool {
 }
 
 
-func (f *CurrencyServer) GetRate(base string, target string) (float64) {
-	ratio := f.Rates[target]/f.Rates[base]
-	return ratio
+func (f *CurrencyServer) GetRates(base string, targets Set, requestTime time.Time) (map[string]float64) {
+	rates := make(map[string]float64)
+	if requestTime.Year() == f.CurrencyUpdateTime.Year() && 
+		requestTime.YearDay() == f.CurrencyUpdateTime.YearDay() {
+		for k, _ := range targets {
+			rates[k] = f.Rates[k]/f.Rates[base]
+		}
+	} else {
+		ratesReturn := f.Source.CustomRequest(base, requestTime)
+		for k, _ := range targets {
+			rates[k] = ratesReturn[k]
+		}
+	}
+	
+	return rates
 }
 
 func (f *CurrencyServer) Update() {
 	rates, curtime := f.Source.PullUpdate()
 	f.Rates = rates
-	f.LastUpdate = curtime
+	f.CurrencyUpdateTime = curtime
 	
-	currencyList := make([]string, 0)
+	currencyList := make(Set)
 	for k, _ := range rates {
-		currencyList = append(currencyList, k)
+		currencyList[k] = true
 	}
 	f.CurrencyList = currencyList
 }
-
 

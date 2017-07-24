@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"io"
+	"time"
 )
 
 const (
@@ -17,14 +18,19 @@ const (
 	QueryStringParseErrorMsg = "Invalid querystring"
 	QueryStringUnrecognizedParameterMsg = "Query parameter %s not recognized"
 	CurrencyUnrecognizedMsg = "Currency %s is not recognized"
+	TimestampFormatInvalidMsg = "Timestamp could not be parsed, please submit requests as RFC 3339"
 	TimestampFutureMsg = "Timestamp is in the future: %s"
 	MultipleBasesSpecifiedMsg = "Multiple base currencies specified"
+
+	TimestampFormat = time.RFC3339
 
 )
 
 type JSONError struct {
     Error string         `json:"error"`
 }
+
+type Set map[string]bool
 
 func ErrorResponseJSON(w http.ResponseWriter, errMsg string, ErrorCode int) {
 	err := JSONError{Error: errMsg}
@@ -105,25 +111,43 @@ func (server *CurrencyServer) RequestHandler(w http.ResponseWriter, r *http.Requ
 		log.Println("No base currency request, assuming USD")
 		params["base"] = []string{"USD"}
 	}
-	
 
-	targets := make([]string, 0)
+	if len(params["timestamp"]) == 0 {
+		curtime := time.Now().UTC().Format(TimestampFormat)
+		params["timestamp"] = []string{curtime}
+		log.Printf("No timestamp requested, assuming %s\n", curtime)
+	}
+
+	requestTime, err := time.Parse(TimestampFormat, params["timestamp"][0])
+	if err != nil {
+		log.Println(TimestampFormatInvalidMsg)
+		ErrorResponseJSON(w, TimestampFormatInvalidMsg, InvalidRequestErrorCode)
+		return
+	} else if requestTime.After(time.Now()) {
+		errorMsg := fmt.Sprintf(TimestampFutureMsg, requestTime.Format(TimestampFormat))
+		log.Println(TimestampFutureMsg, requestTime.Format(TimestampFormat))
+		ErrorResponseJSON(w, errorMsg, InvalidRequestErrorCode)
+		return
+	}
+
+	var targets Set
 	if _, ok := params["target"]; !ok {
 		targets = server.CurrencyList
 	} else {
-		targets = params["target"]
+		targets = make(Set)
+		for _, t := range params["target"] {
+			targets[t] = true
+		}
 	}
 
-	rates := make(map[string]float64)
-	for _, val := range targets {
-		rates[val] = server.GetRate(
-			params["base"][0],
-			val,
-		)
-	}
+	rates := server.GetRates(
+		params["base"][0],
+		targets,
+		requestTime,
+	)
 
 	retObj := ResponseData{
-		Date: server.LastUpdate.Format("2017-01-01"),
+		Date: requestTime.Format(TimestampFormat),
 		Base: params["base"][0],
 		Rates: rates,
 	}

@@ -13,6 +13,7 @@ import (
 
 type Provider interface {
 	PullUpdate() (map[string]float64, time.Time)
+	CustomRequest(base string, requestTime time.Time) (map[string]float64)
 }
 
 
@@ -24,10 +25,12 @@ type FixerData struct {
 
 const (
         FixerEndpoint = "https://api.fixer.io"
-        FixerQuerystring = "latest?base="
+        FixerQuerystring = "?base="
 	FixerBase = "USD"
+	FixerTimestampFormat = "2006-01-02"
 
 	FixerBackendError = "Error pulling from Fixer: %s\n"
+	
 )
 
 type Fixer struct {}
@@ -40,7 +43,13 @@ func (f *Fixer) ErrorCheck(err error) {
 }
 
 func (f *Fixer) PullUpdate() (map[string]float64, time.Time) {
-	query := FixerEndpoint + "/" + FixerQuerystring + FixerBase
+	requestTime := time.Now()
+	return f.CustomRequest("USD", requestTime), requestTime
+}
+
+func (f *Fixer) CustomRequest(base string, requestTime time.Time) (map[string]float64) {
+	query := FixerEndpoint + "/" + requestTime.Format(FixerTimestampFormat) + FixerQuerystring + base
+
 	resp, err := http.Get(query)
 	f.ErrorCheck(err)
 
@@ -59,7 +68,8 @@ func (f *Fixer) PullUpdate() (map[string]float64, time.Time) {
 	}
 	upperCaseMap[FixerBase] = 1.0
 
-	datetime := time.Now().UTC()
-	return upperCaseMap, datetime
+	return upperCaseMap
 }
+
+
 
